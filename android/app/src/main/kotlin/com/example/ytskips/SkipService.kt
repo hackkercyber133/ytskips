@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 
@@ -32,7 +33,8 @@ class SkipService : AccessibilityService() {
     private val adTextRegexes = listOf(
         Regex("^(ad|iklan)\\s*[·•].*", RegexOption.IGNORE_CASE),
         Regex("^(ad|iklan)\\s+\\d+\\s+(of|dari)\\s+\\d+.*", RegexOption.IGNORE_CASE),
-        Regex("^(ad|iklan)$", RegexOption.IGNORE_CASE)
+        Regex("^(ad|iklan)$", RegexOption.IGNORE_CASE),
+        Regex("^(bersponsor|sponsored)$", RegexOption.IGNORE_CASE)
     )
     private val adPhrases = listOf("visit advertiser", "kunjungi pengiklan")
 
@@ -76,13 +78,14 @@ class SkipService : AccessibilityService() {
 
     private fun process(now: Long) {
         if (now < ignoreUntil) return
-        val root = rootInActiveWindow
-        if (root == null || root.packageName?.toString() != YT) {
+        val root = findYoutubeRoot()
+        if (root == null) {
             if (adSince != 0L && ++noAdScans >= 2) endAd("idle")
             return
         }
         val s = Scan()
         walk(root, s, 0)
+        Log.d("ytskips", "scan nodes=${s.count} ad=${s.ad} skip=${s.skip != null} weak=${s.weakSkip != null}")
         val adContext = s.ad || adSince != 0L
         val target = s.skip ?: if (adContext) s.weakSkip else null
 
@@ -115,6 +118,16 @@ class SkipService : AccessibilityService() {
         } else if (adSince != 0L) {
             if (++noAdScans >= 2) endAd("idle")
         }
+    }
+
+    private fun findYoutubeRoot(): AccessibilityNodeInfo? {
+        val active = rootInActiveWindow
+        if (active?.packageName?.toString() == YT) return active
+        for (w in windows) {
+            val r = w.root ?: continue
+            if (r.packageName?.toString() == YT) return r
+        }
+        return null
     }
 
     private fun walk(n: AccessibilityNodeInfo?, s: Scan, depth: Int) {

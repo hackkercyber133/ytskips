@@ -1,0 +1,16 @@
+workflows:
+  ytskips-android:
+    name: ytskips Android APK
+    max_build_duration: 30
+    environment:
+      flutter: stable
+      java: 17
+    scripts:
+      - name: Buat scaffold Android
+        script: flutter create --org com.example --project-name ytskips --platforms android .
+      - name: Pub get
+        script: flutter pub get
+      - name: Build APK
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
