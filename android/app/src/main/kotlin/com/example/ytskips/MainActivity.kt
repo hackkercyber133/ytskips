@@ -61,7 +61,11 @@ class MainActivity : FlutterActivity() {
         EventChannel(messenger, "ytskips/events").setStreamHandler(object : EventChannel.StreamHandler {
             private val main = Handler(Looper.getMainLooper())
             override fun onListen(args: Any?, sink: EventChannel.EventSink) {
-                SkipService.listener = { m -> main.post { sink.success(m) } }
+                SkipService.listener = { m ->
+                    main.post {
+                        try { sink.success(m) } catch (e: Exception) { SkipService.listener = null }
+                    }
+                }
             }
             override fun onCancel(args: Any?) {
                 SkipService.listener = null

@@ -337,6 +337,105 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     );
   }
 
+  void _showHelp() {
+    HapticFeedback.selectionClick();
+    const steps = [
+      'Buka Info Aplikasi ytskips → Penghemat baterai → Tanpa batasan.',
+      'Aktifkan Mulai otomatis (Autostart) untuk ytskips.',
+      'Kunci aplikasi di recent apps (tarik kartu ke bawah / ikon gembok).',
+      'Jangan pakai "Paksa berhenti" atau swipe-bersih dari pembersih memori.',
+      'Matikan "Jeda aktivitas aplikasi jika tidak digunakan" (jika ada).',
+    ];
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: C.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text('Cara atasi',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.8, color: C.text)),
+              const SizedBox(height: 6),
+              const Text(
+                'Jika aksesibilitas mati sendiri atau aplikasi tidak berfungsi saat digunakan ulang (muncul "Tidak berfungsi. Ketuk untuk melihat infonya.").',
+                style: TextStyle(fontSize: 13, color: C.muted, height: 1.4),
+              ),
+              const SizedBox(height: 18),
+              for (int i = 0; i < steps.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('0${i + 1}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: C.red, letterSpacing: 1)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(steps[i], style: const TextStyle(fontSize: 14, color: C.text, height: 1.35)),
+                    ),
+                  ]),
+                ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: C.bg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: C.line),
+                ),
+                child: const Text(
+                  'Kalau sudah terlanjur "Tidak berfungsi": buka Aksesibilitas → ytskips → matikan, lalu nyalakan lagi sekali.',
+                  style: TextStyle(fontSize: 13, color: C.text, height: 1.4),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: Native.openAppInfo,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: C.text,
+                      side: const BorderSide(color: C.line),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Info Aplikasi', style: TextStyle(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: Native.openAccessibility,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: C.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: const Text('Aksesibilitas', style: TextStyle(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _header() => Row(children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
@@ -357,6 +456,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
             const SizedBox(width: 7),
             Text(_live ? 'live' : 'off', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: C.muted)),
           ]),
+        ),
+        const SizedBox(width: 6),
+        IconButton(
+          onPressed: _showHelp,
+          tooltip: 'Cara atasi bug',
+          icon: const Icon(Icons.settings_suggest_rounded, color: C.muted, size: 26),
         ),
       ]);
 

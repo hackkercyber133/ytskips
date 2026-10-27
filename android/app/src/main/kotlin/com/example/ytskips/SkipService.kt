@@ -53,7 +53,11 @@ class SkipService : AccessibilityService() {
     private val watchdog = object : Runnable {
         override fun run() {
             if (adSince == 0L) return
-            process(SystemClock.elapsedRealtime())
+            try {
+                process(SystemClock.elapsedRealtime())
+            } catch (e: Exception) {
+                Log.e("ytskips", "watchdog error", e)
+            }
             if (adSince != 0L) handler.postDelayed(this, 1000)
         }
     }
@@ -65,15 +69,28 @@ class SkipService : AccessibilityService() {
         var count = 0
     }
 
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        adSince = 0L
+        noAdScans = 0
+        countedUnskippable = false
+        weMuted = false
+        lastStatus = ""
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!prefs.getBoolean("enabled", true)) {
-            if (adSince != 0L || weMuted) endAd("idle")
-            return
+        try {
+            if (!prefs.getBoolean("enabled", true)) {
+                if (adSince != 0L || weMuted) endAd("idle")
+                return
+            }
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastScan < 200) return
+            lastScan = now
+            process(now)
+        } catch (e: Exception) {
+            Log.e("ytskips", "event error", e)
         }
-        val now = SystemClock.elapsedRealtime()
-        if (now - lastScan < 200) return
-        lastScan = now
-        process(now)
     }
 
     private fun process(now: Long) {
@@ -174,6 +191,10 @@ class SkipService : AccessibilityService() {
     }
 
     private fun setMute(on: Boolean) {
+        try { setMuteUnsafe(on) } catch (e: Exception) { Log.e("ytskips", "mute error", e) }
+    }
+
+    private fun setMuteUnsafe(on: Boolean) {
         val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (on) {
             if (weMuted) return
@@ -202,26 +223,30 @@ class SkipService : AccessibilityService() {
     private fun emit(status: String) {
         if (status == lastStatus && status != "skipped") return
         lastStatus = status
-        listener?.invoke(
-            mapOf(
-                "status" to status,
-                "skipped" to prefs.getInt("skipped", 0),
-                "unskippable" to prefs.getInt("unskippable", 0)
+        try {
+            listener?.invoke(
+                mapOf(
+                    "status" to status,
+                    "skipped" to prefs.getInt("skipped", 0),
+                    "unskippable" to prefs.getInt("unskippable", 0)
+                )
             )
-        )
+        } catch (e: Exception) {
+            listener = null
+        }
     }
 
     override fun onInterrupt() {
-        endAd("idle")
+        try { endAd("idle") } catch (e: Exception) { }
     }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
-        endAd("idle")
+        try { endAd("idle") } catch (e: Exception) { }
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
-        setMute(false)
+        try { setMute(false) } catch (e: Exception) { }
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
